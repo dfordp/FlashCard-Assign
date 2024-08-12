@@ -18,22 +18,83 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { useState } from "react"
+import { getCookies } from "@/actions/cookies"
+import axios from "axios"
+import { useRouter } from "next/navigation"
 
-const AdminDashboardCompoent = () => {
-  
-  const questions = [ {
-    "question" : "Why are you gay?",
-    "answer" : "I am gay?"
-  }]
+interface FlashCard {
+  id: string;
+  question: string;
+  answer: string;
+}
 
-  const handleEdit = (index: number) => {
-    // Implement edit functionality here
-    console.log(`Edit question at index ${index}`);
+interface AdminDashboardComponentProps {
+  flashCards: FlashCard[];
+}
+
+const AdminDashboardComponent = ({ flashCards }: AdminDashboardComponentProps) => {
+  const router = useRouter();
+
+  const [newQuestion, setNewQuestion] = useState<string>("");
+  const [newAnswer, setNewAnswer] = useState<string>("");
+
+  const [updateQuestion, setUpdateQuestion] = useState<string>("");
+  const [updateAnswer, setUpdateAnswer] = useState<string>("");
+
+  const handleNewFlash = async (): Promise<void> => {
+    const Id = await getCookies("id");
+    const token = await getCookies("token");
+
+    const data = {
+      question: newQuestion,
+      answer: newAnswer,
+      userId: Id,
+    };
+
+    console.log(data);
+
+    const flashcard = await axios.post("/api/flashcard", data, {
+      headers: {
+        "Authorization": token || "",
+      },
+    });
+
+    console.log(flashcard.data);
+
+    setNewAnswer("");
+    setNewQuestion("");
   };
-  
-  const handleDelete = (index: number) => {
-    // Implement delete functionality here
-    console.log(`Delete question at index ${index}`);
+
+  const handleEdit = async (id: string): Promise<void> => {
+    const userId = await getCookies("id");
+    const token = await getCookies("token");
+
+    const data = {
+      question: updateQuestion,
+      answer: updateAnswer,
+    };
+
+    const flashcard = await axios.patch(`/api/flashcard/${id}`, data, {
+      headers: {
+        "Authorization": token || "",
+      },
+    });
+
+    console.log(flashcard.data);
+  };
+
+  const handleDelete = async (id: string): Promise<void> => {
+    const token = await getCookies("token");
+
+    const flashcard = await axios.delete(`/api/flashcard/${id}`, {
+      headers: {
+        "Authorization": token || "",
+      },
+    });
+
+    console.log(flashcard.data);
   };
 
   return (
@@ -45,83 +106,103 @@ const AdminDashboardCompoent = () => {
           </h1>
         </div>
         <div>
-        <Dialog>
-          <DialogTrigger>
-            <Button>
-              Add FlashCard
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone. This will permanently delete your account
-                and remove your data from our servers.
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
+          <Button onClick={() => { router.push('flashcards') }}>
+            Back to FlashCards
+          </Button>
+        </div>
+        <div>
+          <Dialog>
+            <DialogTrigger>
+              <Button>
+                Add FlashCard
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add your Question</DialogTitle>
+                <div className="mt-6">
+                  <div>
+                    Question
+                    <div>
+                      <Input value={newQuestion} onChange={(e) => { setNewQuestion(e.target.value) }} />
+                    </div>
+                  </div>
+                  <div>
+                    Answer
+                    <div>
+                      <Input value={newAnswer} onChange={(e) => { setNewAnswer(e.target.value) }} />
+                    </div>
+                  </div>
+                  <div>
+                    <Button onClick={handleNewFlash}>Submit</Button>
+                  </div>
+                </div>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       <div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">Edit</TableHead>
-            <TableHead>Questions</TableHead>
-            <TableHead>Answer</TableHead>
-            <TableHead>Delete</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-        {questions.map((item, index) => (
-          <TableRow key={index}>
-            <TableCell>
-            <Dialog>
-              <DialogTrigger>
-                <Button>
-                  <FaEdit />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Are you absolutely sure?</DialogTitle>
-                  <DialogDescription>
-                    This action cannot be undone. This will permanently delete your account
-                    and remove your data from our servers.
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
-            </TableCell>
-            <TableCell>{item.question}</TableCell>
-            <TableCell>{item.answer}</TableCell>
-            <TableCell>
-            <Dialog>
-              <DialogTrigger>
-                <Button>
-                  <FaTrash />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Are you absolutely sure?</DialogTitle>
-                  <DialogDescription>
-                    This action cannot be undone. This will permanently delete your account
-                    and remove your data from our servers.
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
-            </TableCell>
-          </TableRow>
-        ))}
-        </TableBody>
-      </Table>
-
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Edit</TableHead>
+              <TableHead>Questions</TableHead>
+              <TableHead>Answer</TableHead>
+              <TableHead>Delete</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {flashCards.map((item, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Dialog>
+                    <DialogTrigger>
+                      <Button onClick={() => {
+                        setUpdateQuestion(item.question);
+                        setUpdateAnswer(item.answer);
+                      }}>
+                        <FaEdit />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Update Question</DialogTitle>
+                        <div className="mt-6">
+                          <div>
+                            Question
+                            <div>
+                              <Input value={updateQuestion} onChange={(e) => { setUpdateQuestion(e.target.value) }} />
+                            </div>
+                          </div>
+                          <div>
+                            Answer
+                            <div>
+                              <Input value={updateAnswer} onChange={(e) => { setUpdateAnswer(e.target.value) }} />
+                            </div>
+                          </div>
+                          <div>
+                            <Button onClick={() => { handleEdit(item.id) }}>Submit</Button>
+                          </div>
+                        </div>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
+                </TableCell>
+                <TableCell>{item.question}</TableCell>
+                <TableCell>{item.answer}</TableCell>
+                <TableCell>
+                  <Button onClick={() => { handleDelete(item.id) }}>
+                    <FaTrash />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )
 }
 
-export default AdminDashboardCompoent
+export default AdminDashboardComponent

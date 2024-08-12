@@ -1,5 +1,6 @@
 "use client"
 
+import { setCookies } from "@/actions/cookies";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import axios from "axios";
@@ -16,12 +17,12 @@ const SignupComponent = () => {
     const handleSubmit = async () => {
         const data = {email,password};
   
-        const user = await axios.post('/api/signin',data);
+        const user = await axios.post('/api/auth/signup',data);
         
-        // await setCookies("token",user.data.token);
-        // await setCookies("id",user.data.user.id)
+        await setCookies("token",user.data.token);
+        await setCookies("id",user.data.user.id)
         
-        // router.push('/')
+        router.push('/flashcards')
   
     }
 
@@ -29,7 +30,7 @@ const SignupComponent = () => {
   return (
     <div className="bg-gray-100 rounded-md px-6 py-4">
       <h3 className="scroll-m-20 text-xl font-semibold tracking-tight">
-        Login
+        Signup
       </h3>
       <div className="mt-6">
         <div>

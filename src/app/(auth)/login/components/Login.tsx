@@ -1,5 +1,6 @@
 "use client"
 
+import { setCookies } from "@/actions/cookies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
@@ -16,12 +17,12 @@ const LoginCompoent = () => {
         const data = {email,password};
 
   
-        const user = await axios.post('/api/signin',data);
+        const user = await axios.post('/api/auth/login',data);
         
-        // await setCookies("token",user.data.token);
-        // await setCookies("id",user.data.user.id)
+        await setCookies("token",user.data.token);
+        await setCookies("id",user.data.user.id)
         
-        // router.push('/')
+        router.push('/flashcards')
   
     }
 
